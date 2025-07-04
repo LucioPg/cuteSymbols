@@ -1,5 +1,6 @@
 
 import re
+from typing import List, Tuple, Optional, Union
 
 
 class CuteSymbols:
@@ -52,7 +53,7 @@ class CuteSymbols:
         return sorted(names | self.__dict__.keys())
 
     @staticmethod
-    def info_from_emoji(emoji) -> tuple[str, str] | None:
+    def info_from_emoji(emoji) -> Optional[Tuple[str, str]]:
         """
         Extracts and returns information about an emoji, including its name and group, from the list of
         stored emojis. If the emoji is not found among the stored entries, returns None.
@@ -74,7 +75,7 @@ class CuteSymbols:
         return None
 
     @staticmethod
-    def name_from_emoji(emoji) -> str | None:
+    def name_from_emoji(emoji) -> Optional[str]:
         """
         Determines the name of a symbol corresponding to the provided emoji. This
         method searches through a predefined listing of symbols and their associated
@@ -97,7 +98,7 @@ class CuteSymbols:
         return None  # oppure: raise ValueError(f"Emoji non trovata: {emoji}")
 
     @staticmethod
-    def list_all() -> list[tuple[str, str, str]]:
+    def list_all() -> List[Tuple[str, str, str]]:
         """
         Lists all symbols from multiple groups.
 
@@ -152,7 +153,7 @@ class CuteSymbols:
         return grouped
 
     @staticmethod
-    def search(pattern, flags=re.IGNORECASE) -> list[tuple[str, str, str]]:
+    def search(pattern, flags=re.IGNORECASE) -> List[Tuple[str, str, str]]:
         """
         Searches for symbols that match the given query in their name or value. The method strips and
         converts the query to lowercase for case-insensitive search. It compares the query against the
