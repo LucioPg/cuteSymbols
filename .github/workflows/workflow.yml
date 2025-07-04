@@ -315,8 +315,8 @@ jobs:
     needs: [test, build, test-install]
 
     # Pubblica su PyPI solo su release
-    if: github.event_name == 'release' ||
-      (github.event_name == 'workflow_dispatch' && inputs.force_pypi_publish)
+    #if: github.event_name == 'release' ||
+     # (github.event_name == 'workflow_dispatch' && inputs.force_pypi_publish)
 
 
     environment:
@@ -329,7 +329,7 @@ jobs:
       run: |
           echo "=== CHECKING BUILD ARTIFACTS ==="
           echo "Looking for artifacts from previous jobs..."
-        shell: pwsh
+      shell: pwsh
       
 
     - name: Download build artifacts
