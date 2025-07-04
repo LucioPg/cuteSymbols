@@ -404,7 +404,7 @@ jobs:
         
         # Testa l'installazione
         python -c "import cuteSymbols; print('PyPI installation successful')"
-        python -c "from cuteSymbols import CuteSymbols; print('PyPI version:', cuteSymbols.__version__)"
+        python -c "import cuteSymbols; print('PyPI version:', cuteSymbols.__version__)"
       shell: pwsh
       env:
         PYTHONIOENCODING: utf-8

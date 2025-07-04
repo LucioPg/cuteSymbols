@@ -524,6 +524,74 @@ class TestCuteSymbols(unittest.TestCase):
         results = CuteSymbols.search("^nonexistent$")
         self.assertEqual(len(results), 0)
 
+    def test_case_insensitive_namespace(self):
+        """Test che l'accesso ai simboli sia case insensitive."""
+
+        # Test con simboli di ogni categoria
+        test_cases = [
+            # (nome_originale, varianti_case, emoji_atteso)
+            ("FIRE", ["fire", "Fire", "FIRE", "fIrE", "FiRe"], "🔥"),
+            ("CHECK", ["check", "Check", "CHECK", "cHeCk", "ChEcK"], "✅"),
+            ("ROCKET", ["rocket", "Rocket", "ROCKET", "rOcKeT", "RoCkEt"], "🚀"),
+            ("FOLDER", ["folder", "Folder", "FOLDER", "fOlDeR", "FoLdEr"], "📁"),
+            ("WARNING", ["warning", "Warning", "WARNING", "wArNiNg"], "⚠️"),
+            ("HOURGLASS", ["hourglass", "Hourglass", "HOURGLASS", "hOuRgLaSs"], "⏳"),
+            ("BRAIN", ["brain", "Brain", "BRAIN", "bRaIn", "BrAiN"], "🧠"),
+            ("TOOL", ["tool", "Tool", "TOOL", "tOoL", "ToOl"], "🛠️"),
+        ]
+
+        for simbolo_originale, varianti, emoji_atteso in test_cases:
+            with self.subTest(simbolo=simbolo_originale):
+                # Verifica che l'accesso normale funzioni
+                self.assertEqual(getattr(self.cute_symbols, simbolo_originale), emoji_atteso)
+
+                # Verifica che tutte le varianti case insensitive funzionino
+                for variante in varianti:
+                    with self.subTest(variante=variante):
+                        risultato = getattr(self.cute_symbols, variante)
+                        self.assertEqual(risultato, emoji_atteso,
+                                         f"Accesso case insensitive fallito per '{variante}'. "
+                                         f"Atteso: {emoji_atteso}, Ottenuto: {risultato}")
+
+        # Test con simboli che non esistono (case insensitive)
+        simboli_inesistenti = ["invalid", "INVALID", "Invalid", "iNvAlId", "notexist", "NOTEXIST"]
+
+        for simbolo_inesistente in simboli_inesistenti:
+            with self.subTest(simbolo_inesistente=simbolo_inesistente):
+                with self.assertRaises(AttributeError) as context:
+                    getattr(self.cute_symbols, simbolo_inesistente)
+                self.assertIn(f"Name not found: '{simbolo_inesistente}'", str(context.exception))
+
+        # Test edge cases
+        edge_cases = [
+            ("cross", "❌"),  # tutto minuscolo
+            ("SUCCESS", "✔️"),  # tutto maiuscolo
+            ("mAgIc", "✨"),  # case misto casuale
+            ("eYeS", "👀"),  # case misto casuale
+        ]
+
+        for caso, emoji_atteso in edge_cases:
+            with self.subTest(edge_case=caso):
+                risultato = getattr(self.cute_symbols, caso)
+                self.assertEqual(risultato, emoji_atteso,
+                                 f"Edge case fallito per '{caso}'. "
+                                 f"Atteso: {emoji_atteso}, Ottenuto: {risultato}")
+
+        # Test che verifica che tutti i simboli siano accessibili in modo case insensitive
+        tutti_i_simboli = self.cute_symbols.list_all()
+
+        for gruppo, nome, emoji in tutti_i_simboli:
+            with self.subTest(simbolo_completo=f"{gruppo}.{nome}"):
+                # Test lowercase
+                risultato_lower = getattr(self.cute_symbols, nome.lower())
+                self.assertEqual(risultato_lower, emoji,
+                                 f"Accesso lowercase fallito per {nome}")
+
+                # Test uppercase (dovrebbe funzionare anche se è già uppercase)
+                risultato_upper = getattr(self.cute_symbols, nome.upper())
+                self.assertEqual(risultato_upper, emoji,
+                                 f"Accesso uppercase fallito per {nome}")
+
 
 if __name__ == '__main__':
     unittest.main()

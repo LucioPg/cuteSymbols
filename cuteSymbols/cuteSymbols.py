@@ -50,10 +50,12 @@ class CuteSymbols:
                 Raises:
                     AttributeError: If symbol is not found
                 """
+        # Converte il nome in maiuscolo per renderlo case insensitive
+        normalized_name = name.upper()
 
         for group in [self.State, self.Activity, self.Emotion, self.Objects]:
-            if hasattr(group, name):
-                return getattr(group, name)
+            if hasattr(group, normalized_name):
+                return getattr(group, normalized_name)
         raise AttributeError(f"Name not found: '{name}'")
 
     def __dir__(self) -> List[str]:
