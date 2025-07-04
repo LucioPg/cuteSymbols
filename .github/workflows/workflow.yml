@@ -315,8 +315,10 @@ jobs:
     needs: [test, build, test-install]
 
     # Pubblica su PyPI solo su release
-    #if: github.event_name == 'release' ||
-     # (github.event_name == 'workflow_dispatch' && inputs.force_pypi_publish)
+    if: |
+      github.event_name == 'release' ||
+      (github.event_name == 'workflow_dispatch' && inputs.force_pypi_publish)
+
 
 
     environment:
@@ -381,10 +383,7 @@ jobs:
         echo "Is prerelease: ${{ github.event.release.prerelease }}"
         echo "Is draft: ${{ github.event.release.draft }}"
         echo "=== END DEBUG ==="
-        
-        # 🛑 FERMA QUI per sicurezza
-        echo "DEBUG MODE - stopping here to avoid accidental publish"
-        exit 1
+
       shell: pwsh
 
     - name: Publish to PyPI
