@@ -1,5 +1,5 @@
 
-name: Test and Publish to TestPyPI
+name: Test and Publish to PyPI
 
 on:
   # Esegui su push al branch main
