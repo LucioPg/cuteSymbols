@@ -35,6 +35,16 @@ jobs:
       with:
         python-version: ${{ matrix.python-version }}
 
+    # Configura l'encoding UTF-8 per Windows
+    - name: Set UTF-8 encoding on Windows
+      if: runner.os == 'Windows'
+      run: |
+        [System.Environment]::SetEnvironmentVariable("PYTHONIOENCODING", "utf-8", "Process")
+        [System.Environment]::SetEnvironmentVariable("PYTHONLEGACYWINDOWSIOENCODING", "utf-8", "Process")
+        echo "PYTHONIOENCODING=utf-8" >> $env:GITHUB_ENV
+        echo "PYTHONLEGACYWINDOWSIOENCODING=utf-8" >> $env:GITHUB_ENV
+      shell: pwsh
+
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
@@ -49,24 +59,33 @@ jobs:
 
     - name: Test package structure
       run: |
-        python -c "import cuteSymbols; print('✅ Package import successful')"
-        python -c "from cuteSymbols import CuteSymbols; print('✅ CuteSymbols class import successful')"
-        python -c "from cuteSymbols import CuteSymbols; print('✅ FIRE symbol:', CuteSymbols().FIRE)"
-        python -c "from cuteSymbols import CuteSymbols; print('✅ Search function:', len(CuteSymbols.search('fire')))"
+        python -c "import cuteSymbols; print('Package import successful')"
+        python -c "from cuteSymbols import CuteSymbols; print('CuteSymbols class import successful')"
+        python -c "from cuteSymbols import CuteSymbols; print('FIRE symbol:', CuteSymbols().FIRE)"
+        python -c "from cuteSymbols import CuteSymbols; print('Search function:', len(CuteSymbols.search('fire')))"
+      env:
+        PYTHONIOENCODING: utf-8
+        PYTHONLEGACYWINDOWSIOENCODING: utf-8
 
     - name: Test version access
       run: |
-        python -c "import cuteSymbols; print('✅ Version:', cuteSymbols.__version__)"
+        python -c "import cuteSymbols; print('Version:', cuteSymbols.__version__)"
+      env:
+        PYTHONIOENCODING: utf-8
+        PYTHONLEGACYWINDOWSIOENCODING: utf-8
 
     - name: Run pytest (if test files exist)
       run: |
         if (Test-Path "tests") -or (Test-Path "test_*.py") {
           pytest -v
         } else {
-          Write-Host "ℹ️  No test files found, skipping pytest"
+          Write-Host "No test files found, skipping pytest"
         }
       shell: pwsh
       continue-on-error: true
+      env:
+        PYTHONIOENCODING: utf-8
+        PYTHONLEGACYWINDOWSIOENCODING: utf-8
 
   build:
     name: Build distribution packages
@@ -81,6 +100,15 @@ jobs:
       uses: actions/setup-python@v4
       with:
         python-version: '3.11'
+
+    # Configura l'encoding UTF-8 per Windows
+    - name: Set UTF-8 encoding on Windows
+      run: |
+        [System.Environment]::SetEnvironmentVariable("PYTHONIOENCODING", "utf-8", "Process")
+        [System.Environment]::SetEnvironmentVariable("PYTHONLEGACYWINDOWSIOENCODING", "utf-8", "Process")
+        echo "PYTHONIOENCODING=utf-8" >> $env:GITHUB_ENV
+        echo "PYTHONLEGACYWINDOWSIOENCODING=utf-8" >> $env:GITHUB_ENV
+      shell: pwsh
 
     - name: Install build dependencies
       run: |
@@ -97,6 +125,9 @@ jobs:
     - name: Build package
       run: |
         python -m build
+      env:
+        PYTHONIOENCODING: utf-8
+        PYTHONLEGACYWINDOWSIOENCODING: utf-8
 
     - name: Verify build
       run: |
@@ -125,6 +156,16 @@ jobs:
       with:
         python-version: ${{ matrix.python-version }}
 
+    # Configura l'encoding UTF-8 per Windows
+    - name: Set UTF-8 encoding on Windows
+      if: runner.os == 'Windows'
+      run: |
+        [System.Environment]::SetEnvironmentVariable("PYTHONIOENCODING", "utf-8", "Process")
+        [System.Environment]::SetEnvironmentVariable("PYTHONLEGACYWINDOWSIOENCODING", "utf-8", "Process")
+        echo "PYTHONIOENCODING=utf-8" >> $env:GITHUB_ENV
+        echo "PYTHONLEGACYWINDOWSIOENCODING=utf-8" >> $env:GITHUB_ENV
+      shell: pwsh
+
     - name: Download build artifacts
       uses: actions/download-artifact@v3
       with:
@@ -145,9 +186,12 @@ jobs:
 
     - name: Test installed package
       run: |
-        python -c "import cuteSymbols; print('✅ Installed version:', cuteSymbols.__version__)"
-        python -c "from cuteSymbols import CuteSymbols; print('✅ CuteSymbols test:', CuteSymbols().ROCKET)"
-        python -c "from cuteSymbols import CuteSymbols; print('✅ Search test:', len(CuteSymbols.search('star')))"
+        python -c "import cuteSymbols; print('Installed version:', cuteSymbols.__version__)"
+        python -c "from cuteSymbols import CuteSymbols; print('CuteSymbols test:', CuteSymbols().ROCKET)"
+        python -c "from cuteSymbols import CuteSymbols; print('Search test:', len(CuteSymbols.search('star')))"
+      env:
+        PYTHONIOENCODING: utf-8
+        PYTHONLEGACYWINDOWSIOENCODING: utf-8
 
   publish-testpypi:
     name: Publish to TestPyPI
@@ -169,6 +213,15 @@ jobs:
       uses: actions/setup-python@v4
       with:
         python-version: '3.11'
+
+    # Configura l'encoding UTF-8 per Windows
+    - name: Set UTF-8 encoding on Windows
+      run: |
+        [System.Environment]::SetEnvironmentVariable("PYTHONIOENCODING", "utf-8", "Process")
+        [System.Environment]::SetEnvironmentVariable("PYTHONLEGACYWINDOWSIOENCODING", "utf-8", "Process")
+        echo "PYTHONIOENCODING=utf-8" >> $env:GITHUB_ENV
+        echo "PYTHONLEGACYWINDOWSIOENCODING=utf-8" >> $env:GITHUB_ENV
+      shell: pwsh
 
     - name: Download build artifacts
       uses: actions/download-artifact@v3
@@ -202,6 +255,9 @@ jobs:
         # Salva la versione per i step successivi
         echo "DEV_VERSION=$devVersion" >> $env:GITHUB_ENV
       shell: pwsh
+      env:
+        PYTHONIOENCODING: utf-8
+        PYTHONLEGACYWINDOWSIOENCODING: utf-8
 
     - name: Publish to TestPyPI
       env:
@@ -219,9 +275,12 @@ jobs:
         pip install --index-url https://test.pypi.org/simple/ cute-symbols
         
         # Testa l'installazione
-        python -c "import cuteSymbols; print('✅ TestPyPI installation successful')"
-        python -c "from cuteSymbols import CuteSymbols; print('✅ TestPyPI version:', cuteSymbols.__version__)"
+        python -c "import cuteSymbols; print('TestPyPI installation successful')"
+        python -c "from cuteSymbols import CuteSymbols; print('TestPyPI version:', cuteSymbols.__version__)"
       shell: pwsh
+      env:
+        PYTHONIOENCODING: utf-8
+        PYTHONLEGACYWINDOWSIOENCODING: utf-8
 
     - name: Comment on PR with TestPyPI link
       if: github.event_name == 'pull_request'
@@ -274,6 +333,9 @@ jobs:
         pip install cute-symbols
         
         # Testa l'installazione
-        python -c "import cuteSymbols; print('✅ PyPI installation successful')"
-        python -c "from cuteSymbols import CuteSymbols; print('✅ PyPI version:', cuteSymbols.__version__)"
+        python -c "import cuteSymbols; print('PyPI installation successful')"
+        python -c "from cuteSymbols import CuteSymbols; print('PyPI version:', cuteSymbols.__version__)"
       shell: pwsh
+      env:
+        PYTHONIOENCODING: utf-8
+        PYTHONLEGACYWINDOWSIOENCODING: utf-8
