@@ -10,12 +10,18 @@ on:
   pull_request:
     branches: [ main, master ]
 
-  # Esegui manualmente
-  workflow_dispatch:
-
   # Esegui su release
   release:
     types: [published]
+
+  # Esecuzione Manuale del push su PyPI
+  workflow_dispatch:
+    inputs:
+      force_pypi_publish:
+        description: 'Force publish to PyPI'
+        type: boolean
+        default: true
+
 
 jobs:
   test:
@@ -303,7 +309,9 @@ jobs:
     needs: [test, build, test-install]
 
     # Pubblica su PyPI solo su release
-    if: github.event_name == 'release'
+    if: github.event_name == 'release' ||
+      (github.event_name == 'workflow_dispatch' && inputs.force_pypi_publish)
+
 
     environment:
       name: pypi
