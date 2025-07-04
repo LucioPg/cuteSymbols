@@ -55,12 +55,14 @@ print(f"Task completed {symbols.CHECK}") # Task completed ✅ print(f"Loading {s
 
 ## 🔧 Core Methods
 
-### Direct Symbol Access
+### Direct Symbol Access (Case-Insensitive) 🎯
 ```python
-# Access any symbol directly
-fire_emoji = symbols.FIRE # 🔥 check_emoji = symbols.CHECK # ✅ rocket_emoji = symbols.ROCKET # 🚀
-# Use in your applications
-print(f"Deployment started {symbols.ROCKET}") print(f"Tests passed {symbols.SUCCESS}") print(f"Found issue {symbols.BUG}")
+fire_emoji = symbols.FIRE # 🔥 fire_emoji = symbols.fire # 🔥 fire_emoji = symbols.Fire # 🔥 fire_emoji = symbols.fIrE # 🔥
+check_emoji = symbols.CHECK # ✅ check_emoji = symbols.check # ✅ check_emoji = symbols.Check # ✅
+rocket_emoji = symbols.ROCKET # 🚀 rocket_emoji = symbols.rocket # 🚀
+# Use in your applications with any case style you prefer
+print(f"Deployment started {symbols.rocket}") # 🚀 print(f"Tests passed {symbols.SUCCESS}") # ✔️ print(f"Found issue {symbols.bug}") # 🐞
+
 ``` 
 
 ### Search Functionality 🔍
