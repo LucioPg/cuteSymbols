@@ -200,8 +200,7 @@ jobs:
     needs: [test, build, test-install]
 
     # Pubblica solo su push al branch main o su release
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main' || github.event_name == 'release'
-
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     environment:
       name: testpypi
       url: https://test.pypi.org/project/cute-symbols/
