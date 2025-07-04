@@ -16,11 +16,10 @@ def read_readme():
             return f.read()
     return "A Python library for managing and accessing cute emoji symbols in your applications."
 
-
-# Read version from a version file (optional)
+# Read version from __init__.py
 def get_version():
-    """Get version from __init__.py or return default."""
-    version_file = os.path.join(os.path.dirname(__file__), 'cuteSymbols.py')
+    """Get version from __init__.py."""
+    version_file = os.path.join(os.path.dirname(__file__), 'cuteSymbols', '__init__.py')
     if os.path.exists(version_file):
         # Try to extract version from the file
         with open(version_file, 'r', encoding='utf-8') as f:
@@ -45,28 +44,11 @@ setup(
         "Source Code": "https://github.com/LucioPG/cutesymbols",
     },
 
-    # Package configuration
-    py_modules=["cuteSymbols"],  # Single module
+    # Package configuration - usa find_packages() per la struttura a cartella
+    packages=find_packages(),
 
-    # Dependencies
-    install_requires=[
-        # No external dependencies required
-    ],
-
-    # Optional dependencies
-    extras_require={
-        "dev": [
-            "pytest>=6.0",
-            "pytest-cov>=2.0",
-            "black>=21.0",
-            "flake8>=3.8",
-            "mypy>=0.900",
-        ],
-        "docs": [
-            "sphinx>=4.0",
-            "sphinx-rtd-theme>=1.0",
-        ],
-    },
+    # Nessuna dipendenza esterna richiesta
+    install_requires=[],
 
     # Python version requirements
     python_requires=">=3.8",
@@ -94,11 +76,6 @@ setup(
 
     # Include additional files
     include_package_data=True,
-
-    # Package data
-    package_data={
-        "": ["*.md", "*.txt", "*.yml", "*.yaml"],
-    },
 
     # License
     license="MIT",
