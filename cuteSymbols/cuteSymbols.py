@@ -1,6 +1,6 @@
 
 import re
-from typing import List, Tuple, Optional, Union
+from typing import List, Tuple, Optional, Dict
 
 
 class CuteSymbols:
@@ -37,13 +37,33 @@ class CuteSymbols:
         BUG = "🐞"
 
     # Proxy access: CuteSymbols.FIRE, CuteSymbols.CHECK, etc.
-    def __getattr__(self, name):
+    def __getattr__(self, name: str) -> str:
+        """
+                Allow direct access to symbols via attribute syntax.
+
+                Args:
+                    name: Symbol name
+
+                Returns:
+                    The emoji symbol
+
+                Raises:
+                    AttributeError: If symbol is not found
+                """
+
         for group in [self.State, self.Activity, self.Emotion, self.Objects]:
             if hasattr(group, name):
                 return getattr(group, name)
         raise AttributeError(f"Name not found: '{name}'")
 
-    def __dir__(self):
+    def __dir__(self) -> List[str]:
+        """
+                Return list of available symbol names for autocomplete.
+
+                Returns:
+                    List of all available symbol names
+                """
+
         names = set()
         for group in [self.State, self.Activity, self.Emotion, self.Objects]:
             names.update(
@@ -133,7 +153,7 @@ class CuteSymbols:
             print()
 
     @staticmethod
-    def _simboli_per_gruppo() -> dict[str, list[tuple[str, str]]]:
+    def _simboli_per_gruppo() -> Dict[str, List[Tuple[str, str]]]:
         """
         Groups symbols into categories based on their group and returns a dictionary.
 
