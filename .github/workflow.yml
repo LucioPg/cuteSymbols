@@ -1,0 +1,279 @@
+name: Test and Publish to TestPyPI
+
+on:
+  # Esegui su push al branch main
+  push:
+    branches: [ main, master ]
+
+  # Esegui su pull request
+  pull_request:
+    branches: [ main, master ]
+
+  # Esegui manualmente
+  workflow_dispatch:
+
+  # Esegui su release
+  release:
+    types: [published]
+
+jobs:
+  test:
+    name: Test on ${{ matrix.os }} with Python ${{ matrix.python-version }}
+    runs-on: ${{ matrix.os }}
+
+    strategy:
+      matrix:
+        os: [windows-latest, ubuntu-latest, macos-latest]
+        python-version: ['3.8', '3.9', '3.10', '3.11', '3.12']
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ matrix.python-version }}
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install setuptools wheel build pytest
+
+    - name: Lint with flake8 (optional)
+      run: |
+        pip install flake8
+        flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
+        flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
+      continue-on-error: true
+
+    - name: Test package structure
+      run: |
+        python -c "import cuteSymbols; print('✅ Package import successful')"
+        python -c "from cuteSymbols import CuteSymbols; print('✅ CuteSymbols class import successful')"
+        python -c "from cuteSymbols import CuteSymbols; print('✅ FIRE symbol:', CuteSymbols().FIRE)"
+        python -c "from cuteSymbols import CuteSymbols; print('✅ Search function:', len(CuteSymbols.search('fire')))"
+
+    - name: Test version access
+      run: |
+        python -c "import cuteSymbols; print('✅ Version:', cuteSymbols.__version__)"
+
+    - name: Run pytest (if test files exist)
+      run: |
+        if (Test-Path "tests") -or (Test-Path "test_*.py") {
+          pytest -v
+        } else {
+          Write-Host "ℹ️  No test files found, skipping pytest"
+        }
+      shell: pwsh
+      continue-on-error: true
+
+  build:
+    name: Build distribution packages
+    runs-on: windows-latest
+    needs: test
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+
+    - name: Install build dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install build setuptools wheel twine
+
+    - name: Clean previous builds
+      run: |
+        if (Test-Path "build") { Remove-Item -Path "build" -Recurse -Force }
+        if (Test-Path "dist") { Remove-Item -Path "dist" -Recurse -Force }
+        Get-ChildItem -Path "." -Filter "*.egg-info" -Recurse | Remove-Item -Recurse -Force
+      shell: pwsh
+
+    - name: Build package
+      run: |
+        python -m build
+
+    - name: Verify build
+      run: |
+        twine check dist/*
+        Get-ChildItem -Path "dist" -Name
+
+    - name: Upload build artifacts
+      uses: actions/upload-artifact@v3
+      with:
+        name: dist-packages
+        path: dist/
+
+  test-install:
+    name: Test installation from wheel
+    runs-on: ${{ matrix.os }}
+    needs: build
+
+    strategy:
+      matrix:
+        os: [windows-latest, ubuntu-latest, macos-latest]
+        python-version: ['3.8', '3.12', '3.13']
+
+    steps:
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ matrix.python-version }}
+
+    - name: Download build artifacts
+      uses: actions/download-artifact@v3
+      with:
+        name: dist-packages
+        path: dist/
+
+    - name: Install from wheel (Windows)
+      if: runner.os == 'Windows'
+      run: |
+        $wheelFile = Get-ChildItem -Path "dist" -Filter "*.whl" | Select-Object -First 1
+        pip install $wheelFile.FullName
+      shell: pwsh
+
+    - name: Install from wheel (Unix)
+      if: runner.os != 'Windows'
+      run: |
+        pip install dist/*.whl
+
+    - name: Test installed package
+      run: |
+        python -c "import cuteSymbols; print('✅ Installed version:', cuteSymbols.__version__)"
+        python -c "from cuteSymbols import CuteSymbols; print('✅ CuteSymbols test:', CuteSymbols().ROCKET)"
+        python -c "from cuteSymbols import CuteSymbols; print('✅ Search test:', len(CuteSymbols.search('star')))"
+
+  publish-testpypi:
+    name: Publish to TestPyPI
+    runs-on: windows-latest
+    needs: [test, build, test-install]
+
+    # Pubblica solo su push al branch main o su release
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main' || github.event_name == 'release'
+
+    environment:
+      name: testpypi
+      url: https://test.pypi.org/project/cute-symbols/
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+
+    - name: Download build artifacts
+      uses: actions/download-artifact@v3
+      with:
+        name: dist-packages
+        path: dist/
+
+    - name: Install twine
+      run: |
+        pip install twine
+
+    - name: Create development version for TestPyPI
+      run: |
+        # Crea una versione di sviluppo per evitare conflitti
+        $timestamp = Get-Date -Format "yyyyMMddHHmmss"
+        $version = python -c "import cuteSymbols; print(cuteSymbols.__version__)"
+        $devVersion = "$version.dev$timestamp"
+        Write-Host "Development version: $devVersion"
+        
+        # Modifica la versione nel file __init__.py
+        $initFile = "cuteSymbols/__init__.py"
+        $content = Get-Content $initFile -Raw
+        $newContent = $content -replace "__version__ = `"$version`"", "__version__ = `"$devVersion`""
+        Set-Content -Path $initFile -Value $newContent
+        
+        # Ricostruisci il pacchetto
+        pip install build
+        Remove-Item -Path "dist" -Recurse -Force -ErrorAction SilentlyContinue
+        python -m build
+        
+        # Salva la versione per i step successivi
+        echo "DEV_VERSION=$devVersion" >> $env:GITHUB_ENV
+      shell: pwsh
+
+    - name: Publish to TestPyPI
+      env:
+        TWINE_USERNAME: __token__
+        TWINE_PASSWORD: ${{ secrets.TESTPYPI_API_TOKEN }}
+      run: |
+        twine upload --repository testpypi dist/*
+
+    - name: Test installation from TestPyPI
+      run: |
+        # Aspetta la propagazione
+        Start-Sleep -Seconds 60
+        
+        # Installa da TestPyPI
+        pip install --index-url https://test.pypi.org/simple/ cute-symbols
+        
+        # Testa l'installazione
+        python -c "import cuteSymbols; print('✅ TestPyPI installation successful')"
+        python -c "from cuteSymbols import CuteSymbols; print('✅ TestPyPI version:', cuteSymbols.__version__)"
+      shell: pwsh
+
+    - name: Comment on PR with TestPyPI link
+      if: github.event_name == 'pull_request'
+      uses: actions/github-script@v6
+      with:
+        script: |
+          github.rest.issues.createComment({
+            issue_number: context.issue.number,
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            body: '🚀 Package successfully published to TestPyPI!\n\n' +
+                  '**Installation:** `pip install --index-url https://test.pypi.org/simple/ cute-symbols`\n' +
+                  '**Version:** `' + process.env.DEV_VERSION + '`\n' +
+                  '**TestPyPI:** https://test.pypi.org/project/cute-symbols/'
+          })
+
+  publish-pypi:
+    name: Publish to PyPI
+    runs-on: windows-latest
+    needs: [test, build, test-install]
+
+    # Pubblica su PyPI solo su release
+    if: github.event_name == 'release'
+
+    environment:
+      name: pypi
+      url: https://pypi.org/project/cute-symbols/
+
+    steps:
+    - name: Download build artifacts
+      uses: actions/download-artifact@v3
+      with:
+        name: dist-packages
+        path: dist/
+
+    - name: Publish to PyPI
+      env:
+        TWINE_USERNAME: __token__
+        TWINE_PASSWORD: ${{ secrets.PYPI_API_TOKEN }}
+      run: |
+        pip install twine
+        twine upload dist/*
+
+    - name: Test installation from PyPI
+      run: |
+        # Aspetta la propagazione
+        Start-Sleep -Seconds 120
+        
+        # Installa da PyPI
+        pip install cute-symbols
+        
+        # Testa l'installazione
+        python -c "import cuteSymbols; print('✅ PyPI installation successful')"
+        python -c "from cuteSymbols import CuteSymbols; print('✅ PyPI version:', cuteSymbols.__version__)"
+      shell: pwsh
