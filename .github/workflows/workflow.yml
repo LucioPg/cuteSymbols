@@ -21,6 +21,11 @@ on:
         description: 'Force publish to PyPI'
         type: boolean
         default: true
+      disable_testpypi:
+        description: 'Disable TestPyPI upload'
+        type: boolean
+        default: true
+
 
 
 jobs:
@@ -206,7 +211,8 @@ jobs:
     needs: [test, build, test-install]
 
     # Pubblica solo su push al branch main o su release
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main' && !(github.event_name == 'workflow_dispatch' && inputs.disable_testpypi)
+
     environment:
       name: testpypi
       url: https://test.pypi.org/project/cute-symbols/
@@ -318,11 +324,68 @@ jobs:
       url: https://pypi.org/project/cute-symbols/
 
     steps:
+      # 🔧 STEP 1: Verifica che gli artifacts esistano
+    - name: Check if artifacts exist
+      run: |
+          echo "=== CHECKING BUILD ARTIFACTS ==="
+          echo "Looking for artifacts from previous jobs..."
+        shell: pwsh
+      
+
     - name: Download build artifacts
       uses: actions/download-artifact@v4  # Aggiornato da v3 a v4
       with:
         name: dist-packages
         path: dist/
+    # 🔧 STEP 2: Verifica contenuto artifacts
+    - name: Verify artifacts content
+      run: |
+        echo "=== ARTIFACTS VERIFICATION ==="
+        echo "Checking dist/ folder contents:"
+        Get-ChildItem -Path "dist" -Recurse | ForEach-Object {
+          echo "$($_.FullName) - Size: $($_.Length) bytes"
+        }
+        
+        echo "=== WHEEL FILES ==="
+        $wheelFiles = Get-ChildItem -Path "dist" -Filter "*.whl"
+        if ($wheelFiles.Count -eq 0) {
+          echo "❌ ERROR: No wheel files found!"
+          exit 1
+        }
+        
+        echo "=== TAR.GZ FILES ==="
+        $tarFiles = Get-ChildItem -Path "dist" -Filter "*.tar.gz"
+        if ($tarFiles.Count -eq 0) {
+          echo "❌ ERROR: No tar.gz files found!"
+          exit 1
+        }
+        
+        echo "✅ Build artifacts verified successfully!"
+      shell: pwsh
+
+    # 🔧 STEP 3: Debug GitHub context
+    - name: Debug GitHub context
+      run: |
+        echo "=== GITHUB CONTEXT DEBUG ==="
+        echo "Event name: ${{ github.event_name }}"
+        echo "Event action: ${{ github.event.action }}"
+        echo "Ref: ${{ github.ref }}"
+        echo "Ref type: ${{ github.ref_type }}"
+        echo "Force PyPI input: ${{ inputs.force_pypi_publish }}"
+        echo "Repository: ${{ github.repository }}"
+        echo "Actor: ${{ github.actor }}"
+        echo "=== RELEASE INFO ==="
+        echo "Release URL: ${{ github.event.release.html_url }}"
+        echo "Tag name: ${{ github.event.release.tag_name }}"
+        echo "Release name: ${{ github.event.release.name }}"
+        echo "Is prerelease: ${{ github.event.release.prerelease }}"
+        echo "Is draft: ${{ github.event.release.draft }}"
+        echo "=== END DEBUG ==="
+        
+        # 🛑 FERMA QUI per sicurezza
+        echo "DEBUG MODE - stopping here to avoid accidental publish"
+        exit 1
+      shell: pwsh
 
     - name: Publish to PyPI
       env:
